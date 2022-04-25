@@ -8,10 +8,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="excel_filter_paste",
-    version="0.0.2",
+    version="0.0.3",
     install_requires=[
         "openpyxl",
         "click",
     ],
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    packages=["excel_filter_paste"],
 )

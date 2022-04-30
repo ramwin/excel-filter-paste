@@ -69,8 +69,8 @@ def parse_data(path, end=None):
                     TimeStamp("2022-04-01"): {
                         "D": 1,
                         "收货数": 2,
-                        "F": 3,
-                        "G": 4,
+                        "发货数": 3,
+                        "其他出货 4,
                     }
                 }
             }
@@ -81,10 +81,10 @@ def parse_data(path, end=None):
         end = datetime.date.today()
     end = pandas.Timestamp(end)
     df_dict = pandas.read_excel(
-        path, names=['日期', None, None, "D", "收货数", "F", "G"],
+        path, names=['日期', None, None, "D", "收货数", "发货数", "其他出货"],
         header=9,
         index_col="日期",
-        usecols=["日期", "D", "收货数", "F", "G"],
+        usecols=["日期", "D", "收货数", "发货数", "其他出货"],
         sheet_name=None,
     )
     result = {}

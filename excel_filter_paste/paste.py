@@ -19,7 +19,7 @@ from .parse import parse_data, get_fengtong_file
 logger = logging.getLogger(__name__)
 
 
-def get_fengtong(ws, _type):
+def get_fengtong_base(ws, _type, name):
     """
     找到收货数放在哪一行
     找E列存在丰通的行
@@ -41,13 +41,35 @@ def get_fengtong(ws, _type):
                 and "四川成都" in e_value \
                 and "丰通" in e_value \
                 and row[_type_index].value == _type \
-                and row[column_index].value == "收货数":
+                and row[column_index].value == name:
             result["row"] = index
             break
     else:
         raise Exception("没有找到合适的位置")
     logger.info(result)
     return result
+
+
+def get_fengtong(ws, _type):
+    """
+    找到发货数放在哪一行
+    找E列存在丰通的行
+    Parameters:
+        workshee
+        _type
+    Returns:
+        row: 2248
+        column: I
+    """
+    return get_fengtong_base(ws, _type, "收货数")
+
+
+def get_fengtong_send(ws, _type):
+    return get_fengtong_base(ws, _type, "发货数MP")
+
+
+def get_fengtong_other_send(ws, _type):
+    return get_fengtong_base(ws, _type, "其他出货")
 
 
 def paste_convert(input_path, output, directory):
@@ -59,6 +81,7 @@ def paste_convert(input_path, output, directory):
     ws = wb.active
     # 处理丰通
     data = parse_data(get_fengtong_file(directory))
+    # 收货数
     for _type, _type_data in data.items():
         index = get_fengtong(ws, _type)
         for date, value in _type_data.items():
@@ -69,4 +92,26 @@ def paste_convert(input_path, output, directory):
             if value["收货数"]:
                 logger.info(f"修改{column}{row}为{value['收货数']}")
                 ws[f"{column}{row}"].value = value["收货数"]
+    # 发货数
+    for _type, _type_data in data.items():
+        index = get_fengtong_send(ws, _type)
+        for date, value in _type_data.items():
+            column = get_column_letter(
+                column_index_from_string(index["column"]) + date.day - 1
+            )
+            row = index["row"]
+            if value["发货数"]:
+                logger.info(f"修改{column}{row}为{value['发货数']}")
+                ws[f"{column}{row}"].value = value["发货数"]
+    # 其他出货
+    for _type, _type_data in data.items():
+        index = get_fengtong_send(ws, _type)
+        for date, value in _type_data.items():
+            column = get_column_letter(
+                column_index_from_string(index["column"]) + date.day - 1
+            )
+            row = index["row"]
+            if value["其他出货"]:
+                logger.info(f"修改{column}{row}为{value['其他出货']}")
+                ws[f"{column}{row}"].value = value["其他出货"]
     wb.save(output)

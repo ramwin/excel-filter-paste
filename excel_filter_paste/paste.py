@@ -13,39 +13,17 @@ from openpyxl.utils import column_index_from_string, get_column_letter
 
 import pandas
 
+from .parse import parse_data, get_fengtong_file
+
 
 logger = logging.getLogger(__name__)
-
-
-def parse_data(path, end=None):
-    """
-    Parameters:
-        path: 文件路径
-    Returns:
-        {
-            TimeStamp("2022-04-01"): {
-                "D": 1,
-                "E": 2,
-                "F": 3,
-                "G": 4,
-            }
-        }
-    """
-    if end is None:
-        end = str(datetime.date.today())
-    df = pandas.read_excel(
-        path, names=['日期', None, None, "D", "E", "F", "G"],
-        header=9,
-        index_col="日期",
-        usecols=["日期", "D", "E", "F", "G"],
-    )
-    return df[df.index < end].to_dict(orient="index")
 
 
 def get_fengtong(ws):
     """
     Parameters:
         workshee
+        找G列存在丰通的行
     Returns:
         row: 2248
         column: 1(对应A)
@@ -71,14 +49,13 @@ def paste_convert(input_path, output, directory):
     assert input_path.exists(), f"{input_path}不存在"
     wb = openpyxl.load_workbook(input_path)
     ws = wb.active
-    for i in directory.iterdir():
-        if "丰通日报" in i.name:
-            data = parse_data(i)
-            index = get_fengtong(ws)
-            for date, value in data.items():
-                column = get_column_letter(
-                    index["column"] + date.day - 1)
-                row = index["row"]
-                logger.info(f"修改{column}{row}为{value['D']}")
-                ws[f"{column}{row}"].value = value["D"]
+    # 处理丰通
+    data = parse_data(get_fengtong_file(directory))
+    index = get_fengtong(ws)
+    for date, value in data.items():
+        column = get_column_letter(
+            index["column"] + date.day - 1)
+        row = index["row"]
+        logger.info(f"修改{column}{row}为{value['D']}")
+        ws[f"{column}{row}"].value = value["D"]
     wb.save(output)

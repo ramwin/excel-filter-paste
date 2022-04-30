@@ -4,8 +4,15 @@
 
 
 import datetime
+import logging
 
 import pandas
+import re
+
+from openpyxl import load_workbook
+
+
+logger = logging.getLogger(__name__)
 
 
 def glob(directory, name):
@@ -18,6 +25,37 @@ def glob(directory, name):
     return f"{directory}里面有不止1个{name}的xlsx文件"
 
 
+def get_type(string):
+    """
+    返回括号内的数值
+    Parameters:
+        "2022-04 (aabb-cc) AY8A"
+    Returns:
+        "aabb-cc"
+    """
+    try:
+        return re.split(r'[\(\)（）]', string)[1]
+    except Exception:
+        raise Exception(f"{string}格式不正确")
+
+
+def get_sheet_type(path):
+    """
+    返回丰通的dict
+    Returns:
+        {
+            "sheet_name": "typename"
+        }
+    """
+    wb = load_workbook(path)
+    result = {}
+    for sheetname in wb.sheetnames:
+        sheet = wb[sheetname]
+        _type = get_type(sheet["A3"].value)
+        result[sheetname] = _type
+    return result
+
+
 def parse_data(path, end=None):
     """
     解析丰通的日报
@@ -26,28 +64,39 @@ def parse_data(path, end=None):
         end: datetime.date
     Returns:
         {
-            TimeStamp("2022-04-01"): {
-                "D": 1,
-                "E": 2,
-                "F": 3,
-                "G": 4,
+            {
+                "type1": {
+                    TimeStamp("2022-04-01"): {
+                        "D": 1,
+                        "收货数": 2,
+                        "F": 3,
+                        "G": 4,
+                    }
+                }
             }
         }
     """
+    sheet_name_type = get_sheet_type(path)
     if end is None:
         end = datetime.date.today()
     end = pandas.Timestamp(end)
-    df = pandas.read_excel(
-        path, names=['日期', None, None, "D", "E", "F", "G"],
+    df_dict = pandas.read_excel(
+        path, names=['日期', None, None, "D", "收货数", "F", "G"],
         header=9,
         index_col="日期",
-        usecols=["日期", "D", "E", "F", "G"],
+        usecols=["日期", "D", "收货数", "F", "G"],
+        sheet_name=None,
     )
-    df = df[df.index.notnull()]
-    df = df[~pandas.to_datetime(df.index, errors="coerce").isnull()]
-    result = df[df.index < end].to_dict(orient="index")
+    result = {}
+    for sheet_name, df in df_dict.items():
+        df = df[df.index.notnull()]
+        df = df[~pandas.to_datetime(df.index, errors="coerce").isnull()]
+        _type = sheet_name_type[sheet_name]
+        result[_type] = df[df.index < end].to_dict(orient="index")
     return result
 
 
 def get_fengtong_file(path):
-    return glob(path, "丰通日报")
+    result = glob(path, "丰通日报")
+    logger.info("找到文件: {result}")
+    return result

@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="excel_filter_paste",
-    version="0.2.0",
+    version="0.4.0",
     install_requires=[
         "openpyxl",
         "pandas",
@@ -17,7 +17,7 @@ setup(
     packages=["excel_filter_paste"],
     entry_points={
         "console_scripts": [
-            'excel_filter_paste=excel_filter_paste.__main__.run',
+            'excel_filter_paste=excel_filter_paste.__main__:run',
             'paste=excel_filter_paste.__main__:paste',
         ],
     },

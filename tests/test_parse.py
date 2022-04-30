@@ -12,7 +12,8 @@ import pandas
 from excel_filter_paste.paste import parse_data, paste_convert
 
 
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("excel_filter_paste")
+logger.setLevel(logging.INFO)
 
 
 class Test(unittest.TestCase):

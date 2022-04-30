@@ -19,26 +19,34 @@ from .parse import parse_data, get_fengtong_file
 logger = logging.getLogger(__name__)
 
 
-def get_fengtong(ws):
+def get_fengtong(ws, _type):
     """
+    找到收货数放在哪一行
+    找E列存在丰通的行
     Parameters:
         workshee
-        找G列存在丰通的行
+        _type
     Returns:
         row: 2248
-        column: 1(对应A)
+        column: I
     """
-    result = {}
+    logger.info(f"准备把{_type}数据填写到: ")
+    result = {"column": "I"}
+    e_index = column_index_from_string('E') - 1
+    _type_index = column_index_from_string('D') - 1
     column_index = column_index_from_string('G') - 1
-    for index, row in enumerate(ws.rows):
-        if row[column_index].value:
-            if "天津丰通（一工厂）" in row[column_index].value:
-                if "row" in result:
-                    raise Exception(f"{result['row']}, {index}两行同时符合")
-                result["row"] = index + 1
-    assert "row" in result, "没找到天津丰通（一工厂）"
-    result["column"] = column_index_from_string("I")
-    logger.info(f"起始位置: {result}")
+    for index, row in enumerate(ws.rows, 1):
+        e_value = row[e_index].value
+        if e_value \
+                and "四川成都" in e_value \
+                and "丰通" in e_value \
+                and row[_type_index].value == _type \
+                and row[column_index].value == "收货数":
+            result["row"] = index
+            break
+    else:
+        raise Exception("没有找到合适的位置")
+    logger.info(result)
     return result
 
 
@@ -51,11 +59,14 @@ def paste_convert(input_path, output, directory):
     ws = wb.active
     # 处理丰通
     data = parse_data(get_fengtong_file(directory))
-    index = get_fengtong(ws)
-    for date, value in data.items():
-        column = get_column_letter(
-            index["column"] + date.day - 1)
-        row = index["row"]
-        logger.info(f"修改{column}{row}为{value['D']}")
-        ws[f"{column}{row}"].value = value["D"]
+    for _type, _type_data in data.items():
+        index = get_fengtong(ws, _type)
+        for date, value in _type_data.items():
+            column = get_column_letter(
+                column_index_from_string(index["column"]) + date.day - 1
+            )
+            row = index["row"]
+            if value["收货数"]:
+                logger.info(f"修改{column}{row}为{value['收货数']}")
+                ws[f"{column}{row}"].value = value["收货数"]
     wb.save(output)

@@ -4,10 +4,16 @@
 
 
 import click
+import logging
 from pathlib import Path
 
 from excel_filter_paste.base import convert
 from excel_filter_paste.paste import paste_convert
+
+
+logger = logging.getLogger("excel_filter_paste")
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.INFO)
 
 
 @click.group()

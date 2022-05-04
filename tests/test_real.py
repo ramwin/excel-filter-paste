@@ -16,7 +16,7 @@ ROOT = Path.home().joinpath("test/ava")
 logger = logging.getLogger("excel_filter_paste")
 handler = logging.StreamHandler()
 logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 handler.setFormatter(logging.Formatter("%(asctime)s %(pathname)s %(message)s"))
 
 

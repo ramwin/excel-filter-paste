@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="excel_filter_paste",
-    version="0.7.0",
+    version="0.8.0",
     install_requires=[
         "openpyxl",
         "pandas",
